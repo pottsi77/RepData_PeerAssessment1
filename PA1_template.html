@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+
+<title>Loading and preprocessing the data</title>
+
+<script type="text/javascript">
+window.onload = function() {
+  var imgs = document.getElementsByTagName('img'), i, img;
+  for (i = 0; i < imgs.length; i++) {
+    img = imgs[i];
+    // center an image if it is the only element of its parent
+    if (img.parentElement.childElementCount === 1)
+      img.parentElement.style.textAlign = 'center';
+  }
+};
+</script>
+
+
+
+
+
+<style type="text/css">
+body, td {
+   font-family: sans-serif;
+   background-color: white;
+   font-size: 13px;
+}
+
+body {
+  max-width: 800px;
+  margin: auto;
+  padding: 1em;
+  line-height: 20px;
+}
+
+tt, code, pre {
+   font-family: 'DejaVu Sans Mono', 'Droid Sans Mono', 'Lucida Console', Consolas, Monaco, monospace;
+}
+
+h1 {
+   font-size:2.2em;
+}
+
+h2 {
+   font-size:1.8em;
+}
+
+h3 {
+   font-size:1.4em;
+}
+
+h4 {
+   font-size:1.0em;
+}
+
+h5 {
+   font-size:0.9em;
+}
+
+h6 {
+   font-size:0.8em;
+}
+
+a:visited {
+   color: rgb(50%, 0%, 50%);
+}
+
+pre, img {
+  max-width: 100%;
+}
+pre {
+  overflow-x: auto;
+}
+pre code {
+   display: block; padding: 0.5em;
+}
+
+code {
+  font-size: 92%;
+  border: 1px solid #ccc;
+}
+
+code[class] {
+  background-color: #F8F8F8;
+}
+
+table, td, th {
+  border: none;
+}
+
+blockquote {
+   color:#666666;
+   margin:0;
+   padding-left: 1em;
+   border-left: 0.5em #EEE solid;
+}
+
+hr {
+   height: 0px;
+   border-bottom: none;
+   border-top-width: thin;
+   border-top-style: dotted;
+   border-top-color: #999999;
+}
+
+@media print {
+   * {
+      background: transparent !important;
+      color: black !important;
+      filter:none !important;
+      -ms-filter: none !important;
+   }
+
+   body {
+      font-size:12pt;
+      max-width:100%;
+   }
+
+   a, a:visited {
+      text-decoration: underline;
+   }
+
+   hr {
+      visibility: hidden;
+      page-break-before: always;
+   }
+
+   pre, blockquote {
+      padding-right: 1em;
+      page-break-inside: avoid;
+   }
+
+   tr, img {
+      page-break-inside: avoid;
+   }
+
+   img {
+      max-width: 100% !important;
+   }
+
+   @page :left {
+      margin: 15mm 20mm 15mm 10mm;
+   }
+
+   @page :right {
+      margin: 15mm 10mm 15mm 20mm;
+   }
+
+   p, h2, h3 {
+      orphans: 3; widows: 3;
+   }
+
+   h2, h3 {
+      page-break-after: avoid;
+   }
+}
+</style>
+
+
+
+</head>
+
+<body>
+<h2>Loading and preprocessing the data</h2>
+
+<p>unzip(zipfile=&ldquo;activity.zip&rdquo;)
+activity &lt;- read.csv(&ldquo;activity.csv&rdquo;)</p>
+
+<h2>What is mean total number of steps taken per day?</h2>
+
+<p>library(ggplot2)
+total.steps &lt;- tapply(activity$steps, activity$date, FUN=sum, na.rm=TRUE)
+qplot(total.steps, binwidth=1000, xlab=&ldquo;total number of steps taken each day&rdquo;)</p>
+
+<p>mean(total.steps, na.rm=TRUE)
+median(total.steps, na.rm=TRUE)</p>
+
+<h2>What is the average daily activity pattern?</h2>
+
+<p>library(ggplot2)
+averages &lt;- aggregate(x=list(steps=activity$steps), by=list(interval=activity$interval),
+                      FUN=mean, na.rm=TRUE)
+ggplot(data=averages, aes(x=interval, y=steps)) +
+  geom_line() +
+  xlab(&ldquo;5-minute interval&rdquo;) +
+  ylab(&ldquo;average number of steps taken&rdquo;)</p>
+
+<p>averages[which.max(averages$steps),]</p>
+
+<h2>Imputing missing values</h2>
+
+<p>missing &lt;- is.na(activity$steps)
+table(missing)</p>
+
+<p>impute_value &lt;- function(steps, interval) {
+  filled &lt;- NA
+  if (!is.na(steps))
+    filled &lt;- c(steps)
+  else
+    filled &lt;- (averages[averages$interval==interval, &ldquo;steps&rdquo;])
+  return(filled)
+}
+activity_imputed &lt;- activity
+activity_imputed$steps &lt;- mapply(impute_value, activity_imputed$steps, activity_imputed$interval)</p>
+
+<h2>Are there differences in activity patterns between weekdays and weekends?</h2>
+
+<p>library(ggplot2)
+total.steps &lt;- tapply(activity_imputed$steps, activity_imputed$date, FUN=sum, na.rm=TRUE)
+qplot(total.steps, binwidth=1000, xlab=&ldquo;total number of steps taken each day (imputed)&rdquo;)</p>
+
+<p>mean(total.steps, na.rm=TRUE)
+median(total.steps, na.rm=TRUE)</p>
+
+<p>activity_imputed$date &lt;- as.Date(activity_imputed$date)
+weekday_weekend &lt;- function(date) {
+  day &lt;- weekdays(date)
+  if (day %in% c(&ldquo;Monday&rdquo;, &ldquo;Tuesday&rdquo;, &ldquo;Wednesday&rdquo;, &ldquo;Thursday&rdquo;, &ldquo;Friday&rdquo;))
+    return(&ldquo;weekday&rdquo;)
+  else if (day %in% c(&ldquo;Saturday&rdquo;, &ldquo;Sunday&rdquo;))
+    return(&ldquo;weekend&rdquo;)
+  else
+    stop(&ldquo;invalid date&rdquo;)
+}
+activity_imputed$date &lt;- as.Date(activity_imputed$date)
+activity_imputed$daytype &lt;- sapply(activity_imputed$date, FUN=weekday_weekend)</p>
+
+<p>averages &lt;- aggregate(steps ~ interval + daytype, data=activity_imputed, mean)
+ggplot(averages, aes(interval, steps)) + geom_line() + facet_grid(daytype ~ .) +
+  xlab(&ldquo;5-minute interval&rdquo;) + ylab(&ldquo;Number of steps&rdquo;)</p>
+
+</body>
+
+</html>
